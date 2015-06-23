@@ -1,5 +1,5 @@
 {
-  "name": "swagger-ui",
+  "name": "swagger-ui-hmac",
   "author": "Tony Tam <fehguy@gmail.com>",
   "contributors": [
     {
@@ -22,7 +22,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/swagger-api/swagger-ui.git"
+    "url": "https://github.com/sharkovich/swagger-ui.git"
   },
   "readmeFilename": "README.md",
   "devDependencies": {
