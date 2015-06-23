@@ -23,101 +23,119 @@
     <script src='lib/swagger-oauth.js' type='text/javascript'></script>
     <script type="text/javascript">
         $(function () {
-            var url = window.location.search.match(/url=([^&]+)/);
-            if (url && url.length > 1) {
-                url = decodeURIComponent(url[1]);
-            } else {
-                url = "http://petstore.swagger.io/v2/swagger.json";
-            }
-
-
-            function getLocation(href) {
-                var location = document.createElement('a');
-                location.href = href;
-
-                if (location.host == "") {
-                    location.href = location.href;
-                }
-                return location;
-            }
-
-            window.swaggerUi = new SwaggerUi({
-                url: url,
-                dom_id: "swagger-ui-container",
-                supportedSubmitMethods: ['get', 'post', 'put', 'delete', 'patch'],
-                presend: {
-                    apply: function (obj, opts, callback) {
-                        addApiKeyAuthorization(obj);
-                        callback(obj);
+            function initSwaggerUi(url) {
+                function log() {
+                    if ('console' in window) {
+                        console.log.apply(console, arguments);
                     }
-                },
-                onComplete: function (swaggerApi, swaggerUi) {
-                    // if(typeof initOAuth == "function") {
-                    //   initOAuth({
-                    //     clientId: "your-client-id",
-                    //     realm: "your-realms",
-                    //     appName: "your-app-name"
-                    //   });
-                    // }
+                }
 
-                    $('pre code').each(function (i, e) {
-                        hljs.highlightBlock(e)
-                    });
+                function getLocation(href) {
+                    var location = document.createElement('a');
+                    location.href = href;
 
-                    addApiKeyAuthorization();
+                    if (location.host == "") {
+                        location.href = location.href;
+                    }
+                    return location;
+                }
+
+                window.swaggerUi = new SwaggerUi({
+                    url: url,
+                    dom_id: "swagger-ui-container",
+                    supportedSubmitMethods: ['get', 'post', 'put', 'delete', 'patch'],
+                    presend: {
+                        apply: function (obj, opts, callback) {
+                            addApiKeyAuthorization(obj);
+                            callback(obj);
+                        }
+                    },
+                    onComplete: function (swaggerApi, swaggerUi) {
+                        // if(typeof initOAuth == "function") {
+                        //   initOAuth({
+                        //     clientId: "your-client-id",
+                        //     realm: "your-realms",
+                        //     appName: "your-app-name"
+                        //   });
+                        // }
+
+                        $('pre code').each(function (i, e) {
+                            hljs.highlightBlock(e)
+                        });
+
+                        addApiKeyAuthorization();
+                    },
+                    onFailure: function (data) {
+                        log("Unable to Load SwaggerUI");
+                    },
+                    docExpansion: "none",
+                    apisSorter: "alpha",
+                    showRequestHeaders: false
+                });
+
+                function addApiKeyAuthorization(obj) {
+                    var key = $('#input_apiKey')[0].value;
+                    if (key && key.trim() != "") {
+                        var date = new Date();
+                        var clientIdAuth = $('#input_clientId').val();
+                        console.log(obj);
+                        var a = getLocation(obj.url);
+                        var payload = obj.method + '+' + a.pathname + a.search + a.hash;
+                        payload = payload + "+clientId=" + clientIdAuth;
+                        var body = obj.body ? '+' + obj.body.replace(/\s/g, '') : "";
+
+                        payload = payload + body;
+                        payload = payload + '+' + date.toISOString();
+                        console.log("key", key);
+                        console.log("payload:", payload);
+                        try {
+                            var hmacObj = new jsSHA('SHA-256', 'TEXT');
+                            hmacObj.setHMACKey(key, 'B64');
+                            hmacObj.update(payload);
+                            var hmac = hmacObj.getHMAC('B64');
+                            console.log("digest:", hmac);
+                            obj.headers["Authentication"] = 'hmac ' + clientIdAuth + ':' + hmac;
+                            obj.headers["X-Date"] = date.toISOString();
+
+                        } catch (e) {
+                            console.error(e.message);
+                        }
+                    }
+                }
+
+                // if you have an apiKey you would like to pre-populate on the page for demonstration purposes...
+
+                var apiKey = "dmVyeV9zZWNyZXRfcHJpdmF0ZV9rZXk=";
+                var clientId = "1234567890";
+                $('#input_apiKey').val(apiKey);
+                $('#input_clientId').val(clientId);
+
+                window.swaggerUi.load();
+            }
+
+            $.ajax({
+                type: "HEAD",
+                async: true,
+                url: document.location,
+                error: function (xhr, status, thrown) {
+                    log("Unable to get the Swagger UI URL from the server: " + thrown);
                 },
-                onFailure: function (data) {
-                    log("Unable to Load SwaggerUI");
-                },
-                docExpansion: "none",
-                apisSorter: "alpha",
-                showRequestHeaders: false
+                success: function (message, text, response) {
+                    var url = response.getResponseHeader('Swagger-API-Docs-URL');
+
+                    if (!url) {
+                        url = window.location.search.match(/url=([^&]+)/);
+
+                        if (url && url.length > 1) {
+                            url = url[1];
+                        } else {
+                            url = "http://petstore.swagger.io/v2/swagger.json";
+                        }
+                    }
+
+                    initSwaggerUi(url);
+                }
             });
-
-            function addApiKeyAuthorization(obj) {
-                var key = $('#input_apiKey')[0].value;
-                if (key && key.trim() != "") {
-                    var date = new Date();
-                    var clientIdAuth = $('#input_clientId').val();
-                    console.log(obj);
-                    var a = getLocation(obj.url);
-                    var payload = obj.method + '+' + a.pathname + a.search + a.hash;
-                    payload = payload + "+clientId=" + clientIdAuth;
-                    var body = obj.body ? '+' + obj.body.replace(/\s/g, '') : "";
-
-                    payload = payload + body;
-                    payload = payload + '+' + date.toISOString();
-                    console.log("key", key);
-                    console.log("payload:", payload);
-                    try {
-                        var hmacObj = new jsSHA('SHA-256', 'TEXT');
-                        hmacObj.setHMACKey(key, 'B64');
-                        hmacObj.update(payload);
-                        var hmac = hmacObj.getHMAC('B64');
-                        console.log("digest:", hmac);
-                        obj.headers["Authentication"] = 'hmac ' + clientIdAuth + ':' + hmac;
-                        obj.headers["X-Date"] = date.toISOString();
-
-                    } catch (e) {
-                        console.error(e.message);
-                    }
-                }
-            }
-
-            // if you have an apiKey you would like to pre-populate on the page for demonstration purposes...
-
-            var apiKey = "dmVyeV9zZWNyZXRfcHJpdmF0ZV9rZXk=";
-            var clientId = "1234567890";
-            $('#input_apiKey').val(apiKey);
-            $('#input_clientId').val(clientId);
-
-            window.swaggerUi.load();
-
-            function log() {
-                if ('console' in window) {
-                    console.log.apply(console, arguments);
-                }
-            }
         });
     </script>
 </head>
