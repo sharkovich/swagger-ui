@@ -44,7 +44,7 @@
                     url: url,
                     dom_id: "swagger-ui-container",
                     supportedSubmitMethods: ['get', 'post', 'put', 'delete', 'patch'],
-                    presend: {
+                    preSend: {
                         apply: function (obj, opts, callback) {
                             addApiKeyAuthorization(obj);
                             callback(obj);
@@ -62,8 +62,6 @@
                         $('pre code').each(function (i, e) {
                             hljs.highlightBlock(e)
                         });
-
-                        addApiKeyAuthorization();
                     },
                     onFailure: function (data) {
                         log("Unable to Load SwaggerUI");
