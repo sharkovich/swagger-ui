@@ -29,6 +29,18 @@
             } else {
                 url = "http://petstore.swagger.io/v2/swagger.json";
             }
+
+
+            function getLocation(href) {
+                var location = document.createElement('a');
+                location.href = href;
+
+                if (location.host == "") {
+                    location.href = location.href;
+                }
+                return location;
+            }
+
             window.swaggerUi = new SwaggerUi({
                 url: url,
                 dom_id: "swagger-ui-container",
@@ -91,9 +103,6 @@
                     }
                 }
             }
-
-//            $('#input_apiKey').change(addApiKeyAuthorization);
-//            $('#input_clientId').change(addApiKeyAuthorization);
 
             // if you have an apiKey you would like to pre-populate on the page for demonstration purposes...
 
